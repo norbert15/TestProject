@@ -1,0 +1,36 @@
+# Node.js
+node_modules
+
+# Git és verziókezelés
+.git
+.gitignore
+
+# IDE fájlok
+.idea/
+.vscode/
+
+# Build mappák
+dist/
+build/
+
+# Log fájlok
+*.log
+
+# Teszt fájlok
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Ideiglenes fájlok
+*.swp
+*.bak
+*.tmp
+
+# Docker fájlok
+Dockerfile
+.dockerignore
+
+# Dokumentációs fájlok (opcionálisan)
+README.md
+LICENSE

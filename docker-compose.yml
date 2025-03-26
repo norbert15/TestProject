@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  http_api:
+    image: http-api-gateway
+    container_name: http-api-gateway
+    build:
+      context: ./
+      dockerfile: ./apps/http-api-gateway/Dockerfile
+    depends_on:
+      - nats_server
+      - postgres
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/usr/src/app
+      - ./node_modules:/usr/src/app/node_modules
+    command: npm run start:dev http-api-gateway
+    restart: always
+    networks:
+      - main
+
+  profile_service:
+    image: profile-service
+    container_name: profile-service
+    build:
+      context: ./
+      dockerfile: ./apps/profile-service/Dockerfile
+    depends_on:
+      - nats_server
+      - postgres
+    ports:
+      - '3001:3001'
+    volumes:
+      - .:/usr/src/app
+      - ./node_modules:/usr/src/app/node_modules
+    command: npm run start:dev profile-service
+    restart: always
+    networks:
+      - main
+
+  address_service:
+    image: address-service
+    container_name: address-service
+    build:
+      context: ./
+      dockerfile: ./apps/address-service/Dockerfile
+    depends_on:
+      - nats_server
+      - postgres
+    ports:
+      - '3002:3002'
+    volumes:
+      - .:/usr/src/app
+      - ./node_modules:/usr/src/app/node_modules
+    command: npm run start:dev address-service
+    restart: always
+    networks:
+      - main
+
+  auth_service:
+    image: auth-service
+    container_name: auth-service
+    build:
+      context: ./
+      dockerfile: ./apps/auth-service/Dockerfile
+    depends_on:
+      - nats_server
+      - postgres
+    ports:
+      - '3003:3003'
+    volumes:
+      - .:/usr/src/app
+      - ./node_modules:/usr/src/app/node_modules
+    command: npm run start:dev auth-service
+    restart: always
+    networks:
+      - main
+
+  nats_server:
+    image: nats
+    ports:
+      - '4222:4222'
+    networks:
+      - main
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '${DB_PORT}:${DB_PORT}'
+    networks:
+      - main
+
+  liquibase:
+    image: liquibase/liquibase
+    container_name: liquibase
+    depends_on:
+      - postgres
+    volumes:
+      - ./liquibase/changelog:/liquibase/changelog
+    environment:
+      - LIQUIBASE_COMMAND_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - LIQUIBASE_COMMAND_USERNAME=${DB_USER}
+      - LIQUIBASE_COMMAND_PASSWORD=${DB_PASSWORD}
+      - LIQUIBASE_COMMAND_CHANGELOG_FILE=changelog/db.changelog.xml
+    entrypoint: ['liquibase']
+    command: ['update']
+    networks:
+      - main
+
+networks:
+  main:
+    driver: bridge
