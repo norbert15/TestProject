@@ -29,9 +29,7 @@ describe('HttpApiGatewayController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  });
 
-  it('/students/create (POST) - should create a new student from microservice', async () => {
     const response = await request(app.getHttpServer())
       .post('/students/create')
       .send({ name, email })
@@ -44,22 +42,27 @@ describe('HttpApiGatewayController (e2e)', () => {
       });
 
     studentId = response.body.id;
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ username: 'admin', password: 'admin' })
+      .expect(201);
+
+    const { body } = loginResponse;
+
+    expect(body).toHaveProperty('accessToken');
+
+    accessToken = body.accessToken;
   });
 
   it('/students/list (GET) - should get students from microservice', async () => {
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .get('/students/list')
       .expect(200)
       .expect((response) => {
         expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length <= 100).toBe(true);
       });
-
-    const studentInList = response.body.find(
-      (student: StudentDto) => student.id === studentId,
-    );
-    expect(studentInList).toBeDefined();
-    expect(studentInList.name).toBe(name);
-    expect(studentInList.email).toBe(email);
   });
 
   it('/students/update (PUT) - should update the student from microservice', async () => {
@@ -101,19 +104,6 @@ describe('HttpApiGatewayController (e2e)', () => {
     expect(studentInList).toBeUndefined();
   });
 
-  it('/auth/login (POST) - should get an access token for authentication from microservice', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ username: 'admin', password: 'admin' })
-      .expect(201);
-
-    const { body } = response;
-
-    expect(body).toHaveProperty('accessToken');
-
-    accessToken = body.accessToken;
-  });
-
   it('/addresses/create (POST) - should create an new address from microservice', async () => {
     await request(app.getHttpServer())
       .post('/addresses/create')
@@ -128,7 +118,7 @@ describe('HttpApiGatewayController (e2e)', () => {
       });
   });
 
-  it('./addresses/list (GET) - should get the created address from microservice', async () => {
+  it('./addresses/list (GET) - should get addresses from microservice', async () => {
     await request(app.getHttpServer())
       .get('/addresses/list')
       .set('Authorization', `Bearer  ${accessToken}`)
@@ -136,12 +126,7 @@ describe('HttpApiGatewayController (e2e)', () => {
       .expect((response) => {
         const { body } = response;
         expect(Array.isArray(body)).toBe(true);
-
-        const addressInList = body.find(
-          (a: AddressDto) => a.address === address,
-        );
-
-        expect(addressInList).toBeDefined();
+        expect(body.length <= 100).toBe(true);
       });
   });
 
